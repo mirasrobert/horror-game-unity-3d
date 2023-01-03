@@ -11,10 +11,16 @@ public class FollowPlayer : MonoBehaviour
     public Transform raycast4; // Raycast
     public Transform raycast5; // Raycast
 
-    // Objects transform
+    public float attackRange = 2.5f;
+
+    // Objects enemy transform
     Transform transform;
 
+    // Agent
     NavMeshAgent nav;
+
+    // Animator
+    Animator animator;
 
     // Array of waypoints
     public Transform[] waypoints;
@@ -30,6 +36,7 @@ public class FollowPlayer : MonoBehaviour
     {
         nav = GetComponent<NavMeshAgent>();
         transform = GetComponent<Transform>();
+        animator = GetComponent<Animator>();
     }
 
     private void FixedUpdate()
@@ -50,11 +57,11 @@ public class FollowPlayer : MonoBehaviour
                 ChasePlayer(player);
 
                 Debug.Log("Chase Player");
-                Debug.DrawRay(raycast.position, raycast.TransformDirection(Vector3.forward) * hit.distance, Color.green);
-                Debug.DrawRay(raycast2.position, raycast2.TransformDirection(Vector3.forward) * hit.distance, Color.green);
-                Debug.DrawRay(raycast3.position, raycast3.TransformDirection(Vector3.forward) * hit.distance, Color.green);
-                Debug.DrawRay(raycast4.position, raycast4.TransformDirection(Vector3.forward) * hit.distance, Color.green);
-                Debug.DrawRay(raycast5.position, raycast5.TransformDirection(Vector3.forward) * hit.distance, Color.green);
+                Debug.DrawRay(raycast.position, raycast.TransformDirection(Vector3.forward) * 100f, Color.green);
+                Debug.DrawRay(raycast2.position, raycast2.TransformDirection(Vector3.forward) * 100f, Color.green);
+                Debug.DrawRay(raycast3.position, raycast3.TransformDirection(Vector3.forward) * 100f, Color.green);
+                Debug.DrawRay(raycast4.position, raycast4.TransformDirection(Vector3.forward) * 100f, Color.green);
+                Debug.DrawRay(raycast5.position, raycast5.TransformDirection(Vector3.forward) * 100f, Color.green);
 
             }
             else
@@ -69,11 +76,11 @@ public class FollowPlayer : MonoBehaviour
                     UpdateDestination();
                 }
  
-                Debug.DrawRay(raycast.position, raycast.TransformDirection(Vector3.forward) * hit.distance, Color.red);
-                Debug.DrawRay(raycast2.position, raycast2.TransformDirection(Vector3.forward) * hit.distance, Color.red);
-                Debug.DrawRay(raycast3.position, raycast3.TransformDirection(Vector3.forward) * hit.distance, Color.red);
-                Debug.DrawRay(raycast4.position, raycast4.TransformDirection(Vector3.forward) * hit.distance, Color.red);
-                Debug.DrawRay(raycast5.position, raycast5.TransformDirection(Vector3.forward) * hit.distance, Color.red);
+                Debug.DrawRay(raycast.position, raycast.TransformDirection(Vector3.forward) * 100f, Color.red);
+                Debug.DrawRay(raycast2.position, raycast2.TransformDirection(Vector3.forward) * 100f, Color.red);
+                Debug.DrawRay(raycast3.position, raycast3.TransformDirection(Vector3.forward) * 100f, Color.red);
+                Debug.DrawRay(raycast4.position, raycast4.TransformDirection(Vector3.forward) * 100f, Color.red);
+                Debug.DrawRay(raycast5.position, raycast5.TransformDirection(Vector3.forward) * 100f, Color.red);
 
 
             }
@@ -90,11 +97,11 @@ public class FollowPlayer : MonoBehaviour
                 Debug.Log("No Hit");
             }
 
-            Debug.DrawRay(raycast.position, raycast.TransformDirection(Vector3.forward) * 1000, Color.red);
-            Debug.DrawRay(raycast2.position, raycast2.TransformDirection(Vector3.forward) * 1000, Color.red);
-            Debug.DrawRay(raycast3.position, raycast3.TransformDirection(Vector3.forward) * 1000, Color.red);
-            Debug.DrawRay(raycast4.position, raycast4.TransformDirection(Vector3.forward) * 1000, Color.red);
-            Debug.DrawRay(raycast5.position, raycast5.TransformDirection(Vector3.forward) * 1000, Color.red);
+            Debug.DrawRay(raycast.position, raycast.TransformDirection(Vector3.forward) * 100, Color.red);
+            Debug.DrawRay(raycast2.position, raycast2.TransformDirection(Vector3.forward) * 100, Color.red);
+            Debug.DrawRay(raycast3.position, raycast3.TransformDirection(Vector3.forward) * 100, Color.red);
+            Debug.DrawRay(raycast4.position, raycast4.TransformDirection(Vector3.forward) * 100, Color.red);
+            Debug.DrawRay(raycast5.position, raycast5.TransformDirection(Vector3.forward) * 100, Color.red);
 
         }
     }
@@ -103,52 +110,20 @@ public class FollowPlayer : MonoBehaviour
     {
         nav.isStopped = false;
         nav.SetDestination(player.position);
+
+        float distance = Vector3.Distance(player.position, transform.position);
+
+        // If in attack range
+        if (distance < attackRange)
+        {
+            Debug.Log("Attack Range");
+            animator.SetTrigger("Attack");
+        }
     }
 
     void StopChasingPlayer()
     {
         nav.isStopped = true;
-    }
-
-    void GoToWaypoints()
-    {
-        // Generate Random Number
-        int randomWaypoints = Random.Range(0, (waypoints.Length - 1));
-
-        // Generate Random Waypoint To Go
-        Transform waypointToGo = waypoints[randomWaypoints];
-
-        if(needToChangeRoute)
-        {
-            // Go to the destination
-            nav.isStopped = false;
-            nav.SetDestination(waypointToGo.position);
-        } else
-        {
-            nav.isStopped = false;
-            nav.SetDestination(waypoints[2].position);
-        }
-
-        CheckIfReachedDestination();
-    }
-
-    void CheckIfReachedDestination()
-    {
-        // Check if we've reached the destination
-        if (!nav.pathPending)
-        {
-            if (nav.remainingDistance <= nav.stoppingDistance)
-            {
-                if (!nav.hasPath || nav.velocity.sqrMagnitude == 0f)
-                {
-                    needToChangeRoute = true;
-                    Debug.Log("has reached");
-                }
-            }
-        }
-
-        Debug.Log("Not reached yet");
-        needToChangeRoute = false;
     }
 
     void UpdateDestination()
@@ -172,15 +147,5 @@ public class FollowPlayer : MonoBehaviour
             // Generate Random Again
             IterateWaypointIndex();
         }
-
-        /* 
-            // check if last way point 
-            if (waypointIndex == waypoints.Length)
-            {
-                // Restart waypoint
-                waypointIndex = 0;
-            }
-         */
-
     }
 }
